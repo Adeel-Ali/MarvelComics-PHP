@@ -38,6 +38,56 @@ class EventsController {
     }
 
     /**
+     * Fetches a single event by id.
+     * @param  string     $eventId     Required parameter: A single event.
+     * @return mixed response from the API call*/
+    public function getEventIndividual (
+                $eventId) 
+    {
+        //the base uri for api requests
+        $_queryBuilder = Configuration::$BASEURI;
+        
+        //prepare query string for API call
+        $_queryBuilder = $_queryBuilder.'/events/{eventId}';
+
+        //process optional query parameters
+        APIHelper::appendUrlWithTemplateParameters($_queryBuilder, array (
+            'eventId' => $eventId,
+            ));
+
+        //process optional query parameters
+        APIHelper::appendUrlWithQueryParameters($_queryBuilder, array (
+            'apikey' => Configuration::$apikey,
+        ));
+
+        //validate and preprocess url
+        $_queryUrl = APIHelper::cleanUrl($_queryBuilder);
+
+        //prepare headers
+        $_headers = array (
+            'user-agent'    => 'APIMATIC 2.0',
+            'Accept'        => 'application/json',
+            'referer' => Configuration::$referer
+        );
+
+        //and invoke the API call request to fetch the response
+        $response = Request::get($_queryUrl, $_headers);
+
+        //Error handling using HTTP status codes
+        if ($response->code == 404) {
+            throw new APIException('Event not found.', 404, $response->body);
+        }
+
+        else if (($response->code < 200) || ($response->code > 206)) { //[200,206] = HTTP OK
+            throw new APIException("HTTP Response Not OK", $response->code, $response->body);
+        }
+
+        $mapper = $this->getJsonMapper();
+
+        return $mapper->map($response->body, new Models\Event());
+    }
+        
+    /**
      * Fetches lists of characters filtered by an event id.
      * @param  string          $eventId            Required parameter: A single event.
      * @param  string|null     $comics             Optional parameter: Return only characters which appear in the specified comics (accepts a comma-separated list of ids).
@@ -501,56 +551,6 @@ class EventsController {
         $mapper = $this->getJsonMapper();
 
         return $mapper->map($response->body, new Models\StoryDataWrapper());
-    }
-        
-    /**
-     * Fetches a single event by id.
-     * @param  string     $eventId     Required parameter: A single event.
-     * @return mixed response from the API call*/
-    public function getEventIndividual (
-                $eventId) 
-    {
-        //the base uri for api requests
-        $_queryBuilder = Configuration::$BASEURI;
-        
-        //prepare query string for API call
-        $_queryBuilder = $_queryBuilder.'/events/{eventId}';
-
-        //process optional query parameters
-        APIHelper::appendUrlWithTemplateParameters($_queryBuilder, array (
-            'eventId' => $eventId,
-            ));
-
-        //process optional query parameters
-        APIHelper::appendUrlWithQueryParameters($_queryBuilder, array (
-            'apikey' => Configuration::$apikey,
-        ));
-
-        //validate and preprocess url
-        $_queryUrl = APIHelper::cleanUrl($_queryBuilder);
-
-        //prepare headers
-        $_headers = array (
-            'user-agent'    => 'APIMATIC 2.0',
-            'Accept'        => 'application/json',
-            'referer' => Configuration::$referer
-        );
-
-        //and invoke the API call request to fetch the response
-        $response = Request::get($_queryUrl, $_headers);
-
-        //Error handling using HTTP status codes
-        if ($response->code == 404) {
-            throw new APIException('Event not found.', 404, $response->body);
-        }
-
-        else if (($response->code < 200) || ($response->code > 206)) { //[200,206] = HTTP OK
-            throw new APIException("HTTP Response Not OK", $response->code, $response->body);
-        }
-
-        $mapper = $this->getJsonMapper();
-
-        return $mapper->map($response->body, new Models\Event());
     }
         
     /**

@@ -38,6 +38,56 @@ class SeriesController {
     }
 
     /**
+     * Fetches a single comic series by id.
+     * @param  string     $seriesId     Required parameter: Filter by series title.
+     * @return mixed response from the API call*/
+    public function getSeriesIndividual (
+                $seriesId) 
+    {
+        //the base uri for api requests
+        $_queryBuilder = Configuration::$BASEURI;
+        
+        //prepare query string for API call
+        $_queryBuilder = $_queryBuilder.'/series/{seriesId}';
+
+        //process optional query parameters
+        APIHelper::appendUrlWithTemplateParameters($_queryBuilder, array (
+            'seriesId' => $seriesId,
+            ));
+
+        //process optional query parameters
+        APIHelper::appendUrlWithQueryParameters($_queryBuilder, array (
+            'apikey' => Configuration::$apikey,
+        ));
+
+        //validate and preprocess url
+        $_queryUrl = APIHelper::cleanUrl($_queryBuilder);
+
+        //prepare headers
+        $_headers = array (
+            'user-agent'    => 'APIMATIC 2.0',
+            'Accept'        => 'application/json',
+            'referer' => Configuration::$referer
+        );
+
+        //and invoke the API call request to fetch the response
+        $response = Request::get($_queryUrl, $_headers);
+
+        //Error handling using HTTP status codes
+        if ($response->code == 404) {
+            throw new APIException('Series not found.', 404, $response->body);
+        }
+
+        else if (($response->code < 200) || ($response->code > 206)) { //[200,206] = HTTP OK
+            throw new APIException("HTTP Response Not OK", $response->code, $response->body);
+        }
+
+        $mapper = $this->getJsonMapper();
+
+        return $mapper->map($response->body, new Models\Series());
+    }
+        
+    /**
      * Fetches lists of characters filtered by a series id.
      * @param  string          $seriesId           Required parameter: Filter by series title.
      * @param  string|null     $comics             Optional parameter: Return only characters which appear in the specified comics (accepts a comma-separated list of ids).
@@ -489,56 +539,6 @@ class SeriesController {
         $mapper = $this->getJsonMapper();
 
         return $mapper->map($response->body, new Models\StoryDataWrapper());
-    }
-        
-    /**
-     * Fetches a single comic series by id.
-     * @param  string     $seriesId     Required parameter: Filter by series title.
-     * @return mixed response from the API call*/
-    public function getSeriesIndividual (
-                $seriesId) 
-    {
-        //the base uri for api requests
-        $_queryBuilder = Configuration::$BASEURI;
-        
-        //prepare query string for API call
-        $_queryBuilder = $_queryBuilder.'/series/{seriesId}';
-
-        //process optional query parameters
-        APIHelper::appendUrlWithTemplateParameters($_queryBuilder, array (
-            'seriesId' => $seriesId,
-            ));
-
-        //process optional query parameters
-        APIHelper::appendUrlWithQueryParameters($_queryBuilder, array (
-            'apikey' => Configuration::$apikey,
-        ));
-
-        //validate and preprocess url
-        $_queryUrl = APIHelper::cleanUrl($_queryBuilder);
-
-        //prepare headers
-        $_headers = array (
-            'user-agent'    => 'APIMATIC 2.0',
-            'Accept'        => 'application/json',
-            'referer' => Configuration::$referer
-        );
-
-        //and invoke the API call request to fetch the response
-        $response = Request::get($_queryUrl, $_headers);
-
-        //Error handling using HTTP status codes
-        if ($response->code == 404) {
-            throw new APIException('Series not found.', 404, $response->body);
-        }
-
-        else if (($response->code < 200) || ($response->code > 206)) { //[200,206] = HTTP OK
-            throw new APIException("HTTP Response Not OK", $response->code, $response->body);
-        }
-
-        $mapper = $this->getJsonMapper();
-
-        return $mapper->map($response->body, new Models\Series());
     }
         
     /**
